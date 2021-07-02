@@ -17,24 +17,6 @@ app.config['SECRET_KEY'] = '7d441f27d441f27567d441f2b6176a'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
-def recall_m(y_true, y_pred):
-	true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
-	possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
-	recall = true_positives / (possible_positives + K.epsilon())
-	return recall
-
-def precision_m(y_true, y_pred):
-	true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
-	predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
-	precision = true_positives / (predicted_positives + K.epsilon())
-	return precision
-
-def f1_m(y_true, y_pred):
-	precision = precision_m(y_true, y_pred)
-	recall = recall_m(y_true, y_pred)
-	return 2*((precision*recall)/(precision+recall+K.epsilon()))
-
-
 def allowed_file(filename):
 	return '.' in filename and \
 		   filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -42,7 +24,7 @@ def allowed_file(filename):
 
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
-	global dog_race, color_result
+	global dog_race, color_result, dog_race_pred
 	if request.method == 'POST':
 		# check if the post request has the file part
 		if 'file' not in request.files:
@@ -58,17 +40,17 @@ def upload_file():
 			filename = secure_filename(file.filename)
 			file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 			image = cv2.imread(os.path.dirname(os.path.realpath(__file__)) + "/uploads/" + filename)
-			dog_race = dog_race(image)
+			dog_race_pred = dog_race(image)
 			redirect(url_for('upload_file', filename=filename))
 		return '''
 				<!doctype html>
 				<title>Results</title>
 				<h1>Image contains a - </h1>
-				<h2>1st - ''' + dog_race[0] + '''</h2>
+				<h2>1st - ''' + dog_race_pred[0] + '''</h2>
 				<h2>or</h2>
-				<h2>2nd - ''' + dog_race[1] + '''</h2>
+				<h2>2nd - ''' + dog_race_pred[1] + '''</h2>
 				<h2>or</h2>
-				<h2>3rt - ''' + dog_race[2] + '''</h2>
+				<h2>3rt - ''' + dog_race_pred[2] + '''</h2>
 				<form method=post enctype=multipart/form-data>
 				  <input type=file name=file>
 				  <input type=submit value=Upload>
@@ -87,7 +69,7 @@ def upload_file():
 
 def dog_race(image):
 	'''Determines if the image contains a cat or dog'''
-	classifier = load_model('./models/model120.h5')
+	classifier = load_model('./models/model120.h5',	compile=False)
 	races_invert_dict_file = open("./models/races_invert_dict.pkl", "rb")
 	races_invert_dict = pickle.load(races_invert_dict_file)
 	image = cv2.resize(image, (224, 224), interpolation=cv2.INTER_AREA)
