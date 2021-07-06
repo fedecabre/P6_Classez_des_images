@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Results</title>
+</head>
+<body>
+		<h1>Image contains a - </h1>
+		  	{% for your_list_element in dog_race_pred %}
+      			<p>{{ your_list_element }} </p>
+		  	{% endfor %}
+		<img src="{{url_for('static', filename=filename)}}"  width="470" alt="image du chien à classifier"/>
+		<form method=post enctype=multipart/form-data>
+		  <input type=file name=file>
+		  <input type=submit value=Upload>
+		</form>
+
+</body>
+</html>
